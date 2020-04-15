@@ -1,19 +1,24 @@
-{:source-paths ["src"]
+{:source-paths ["src" "repl-tooling/src" "repl-tooling/resources"]
 
- :dependencies [[funcool/promesa "4.0.2"]]
+ :dependencies [[funcool/promesa "4.0.2"]
+                [compliment "0.4.0-SNAPSHOT"]
+                [paprika "0.1.3-SNAPSHOT"]
+                [rewrite-cljs "0.4.4"]
+                [reagent "0.8.1"]
+                [org.rksm/suitable "0.3.2"]]
 
  :builds
  {:package {:target :node-library
-            ;; Uncomment if you want to generate a self-contained
-            ;; JS file that does not require node_modules at all.
-            ; :js-options {:js-provider :shadow
-            ;              :keep-native-requires true
-            ;              :keep-as-require #{"atom"}}
+            :js-options {:js-provider :shadow
+                         :keep-native-requires true
+                         :keep-as-require #{"atom"}}
 
             :compiler-options {:infer-externs :auto}
-            :exports {:activate cljs-skeleton.core/activate
-                      :deactivate cljs-skeleton.core/deactivate
-
-                      :status-bar-consumer
-                      cljs-skeleton.status-bar/consumer}
-            :output-to "lib/main.js"}}}
+            :exports {:activate chlorine-koans.core/activate
+                      :deactivate chlorine-koans.core/deactivate
+                      :consumeClippy chlorine-koans.clippy/consume}
+            :output-to "lib/main.js"}
+  :cljs {:target :bootstrap
+          :entries    [chlorine-koans.bootstrap]
+          :exclude    #{cljs.js}
+          :output-dir "lib/bootstrapped"}}}
