@@ -1,0 +1,99 @@
+@import "syntax-variables";
+@import "ui-variables";
+
+.chlorine-koans.result {
+  white-space: pre;
+
+  a.chevron {
+    &:focus {
+      text-decoration: none;
+    }
+
+    font-family: 'Octicons Regular';
+    font-weight: bold;
+    font-size: var(--editor-font-size);
+    margin-right: 10px;
+    width: 0px;
+    height: 15px;
+
+    &.closed::before {
+      content: "\f078";
+    }
+
+    &.opened::before {
+      content: "\f0a3";
+    }
+  }
+
+  div {
+    display: flex;
+    flex-direction: row;
+  }
+
+  div.browseable {
+    flex-direction: column;
+  }
+
+  div.row {
+    flex-direction: column;
+  }
+
+  div .children {
+    flex-direction: column;
+  }
+
+  a.icon.clipboard {
+    transition: opacity 0.2s ease-in;
+    opacity: 0.15;
+
+    &:hover { opacity: 1; }
+    &::before {
+      margin-left: 0.5em;
+      font-family: 'Octicons Regular';
+      content: "\f035";
+    }
+  }
+}
+
+div.chlorine-koans {
+  div.exception {
+    div.description {
+      font-weight: bold;
+    }
+
+    div.additional {
+      margin-left: 0;
+    }
+  }
+
+  div.stack {
+    opacity: 0.6;
+  }
+}
+
+div.chlorine-koans.result-overlay {
+  background-color: @syntax-background-color;
+  padding: 0.2em;
+  padding-left: 1em;
+  border-radius: 3px;
+  overflow-x: auto;
+  a {
+    color: @text-color-subtle;
+    &.clipboard {
+      display: none;
+    }
+  }
+
+  &.result {
+    border-left: 2px solid #0098ff;
+  }
+
+  &.error {
+    border-left: 2px solid #bb0000;
+  }
+
+  div {
+    display: flex;
+    flex-direction: row;
+  }
+}
