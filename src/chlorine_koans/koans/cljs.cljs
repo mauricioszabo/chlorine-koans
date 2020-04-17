@@ -1,5 +1,6 @@
 (ns chlorine-koans.koans.cljs
   (:require [cljs.js :as cljs]
+            [clojure.reader :as edn]
             [clojure.set :as set]
             [promesa.core :as p]
             [repl-tooling.eval :as eval]
@@ -22,30 +23,65 @@
     "[test]"
     {:eval cljs/js-eval
      :load (partial boot/load c-state)
-     :ns   (symbol "shadow-eval.user")}
+     :ns   (symbol "chlorine-koans.bootstrap")}
     cb))
 
-(def init-cljs!
+(defonce init-cljs!
   (delay (boot/init c-state
                     {:path (join @aux/plugin-dir "bootstrapped")
-                     :load-on-init '#{shadow-eval.user}}
+                     :load-on-init '#{chlorine-koans.bootstrap}}
                     identity)))
+#_
+(eval-str "(let [a 10] (pr-str a))" prn)
+#_
+(eval-str "(pr-str (do (def a 70) a))" prn)
+#_
+(eval-str "(pr-str a)" prn)
+#_
+(eval-str "(+ 1 2)" prn)
+; (eval-str "*ns*" prn)
+;
+; (meta (resolve `defmacro))
+; (resolve (quote atom))
+#_atom
+#_
+(cljs/eval-str c-state "(pr-str `atom)" "[TEST]"
+               {:eval cljs/js-eval
+                :source-map true
+                :load (partial boot/load c-state)
+                :ns (symbol "chlorine-koans.bootstrap")}
+               (fn [ & a] (prn :RES (gensym "res-") a)))
 
-(defonce repl
+(def ^:private callbacks (atom {:error identity :result identity}))
+
+(defn- edn-read [string]
+  (try
+    (edn/read-string {:default tagged-literal} string)
+    (catch :default _ (symbol (str string)))))
+
+(def repl
   (reify eval/Evaluator
     (evaluate [_ command opts callback]
-      (let [{:keys [namespace filename row col]} opts]
-        (cljs/eval-str c-state command filename
+      ; (prn :WILL-I-EVAL? command)
+      (let [code-edn (edn-read command)
+            {:keys [namespace filename row col]} opts]
+        ; (prn :OPTS opts)
+        (cljs/eval-str c-state
+                       (str "(pr-str "command "\n)")
+                       filename
                        {:eval cljs/js-eval
                         :source-map true
                         :load (partial boot/load c-state)
-                        :ns (or namespace "cljs.user")}
+                        :ns (symbol (or namespace "chlorine-koans.bootstrap"))}
                        (fn [result]
+                         (prn :RES result)
                          (if (contains? result :value)
                            (let [v (:value result)]
-                             (callback {:as-text (pr-str v) :result v :parsed? true}))
+                             ((:result @callbacks) {:res (edn-read v) :code command})
+                             (callback {:as-text v :result v}))
                            (let [v (:error result)]
-                             (callback {:as-text (pr-str v) :error v :parsed? true})))))))
+                             ((:error @callbacks) {:res (edn-read v) :code command})
+                             (callback {:as-text v :error v})))))))
     (break [_ repl])))
 
 (defn- notify! [{:keys [type title message]}]
@@ -77,10 +113,14 @@
                   :notify notify!
                   :get-config get-config
                   :on-eval update-inline-result!
-                  :get-rendered-results inline/all-parsed-results})]
+                  :get-rendered-results inline/all-parsed-results
+                  :open-editor atom/open-editor})]
     (reset! editor-state state)
     (doseq [[k {:keys [command]}] (:editor/commands @state)]
       (.add @aux/subscriptions (.. js/atom -commands
                                    (add "atom-text-editor"
                                         (str "chlorine-koans" k)
                                         command))))))
+
+(defn handle-result! [callback] (swap! callbacks assoc :result callback))
+(defn handle-error! [callback] (swap! callbacks assoc :error callback))
