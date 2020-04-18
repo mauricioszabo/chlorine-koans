@@ -50,3 +50,9 @@
                                                          :dismissable true
                                                          :buttons buttons}))))
        (.onDidDismiss ^js @notification #(fn [] (resolve nil) true))))))
+
+(defn append-on-editor [{:keys [line contents column]}]
+  (let [editor (current-editor)]
+    (. editor setText (str (.getText editor) contents))
+    (when line
+      (.setCursorBufferPosition ^js editor #js [line (or column 0)]))))
