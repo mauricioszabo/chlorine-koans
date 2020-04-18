@@ -4,6 +4,7 @@
             [chlorine-koans.ui.inline :as inline]
             [chlorine-koans.ui.atom :as atom]
             [chlorine-koans.koans.intro :as intro]
+            [chlorine-koans.koans.cljs-koans :as koans]
             ["atom" :refer [CompositeDisposable]]))
 
 (defonce atom-state (atom nil))
@@ -22,7 +23,11 @@
   (.add @aux/subscriptions (.. js/atom -commands
                                (add "atom-text-editor"
                                     "chlorine-koans:introduction"
-                                    intro/koan!))))
+                                    intro/koan!)))
+  (.add @aux/subscriptions (.. js/atom -commands
+                               (add "atom-text-editor"
+                                    "chlorine-koans:meditate"
+                                    koans/start!))))
 
 (defn deactivate [state]
   (.dispose ^js @subscriptions))
