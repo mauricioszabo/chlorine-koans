@@ -31,26 +31,6 @@
                     {:path (join @aux/plugin-dir "bootstrapped")
                      :load-on-init '#{chlorine-koans.bootstrap}}
                     identity)))
-#_
-(eval-str "(let [a 10] (pr-str a))" prn)
-#_
-(eval-str "(pr-str (do (def a 70) a))" prn)
-#_
-(eval-str "(pr-str a)" prn)
-#_
-(eval-str "(+ 1 2)" prn)
-; (eval-str "*ns*" prn)
-;
-; (meta (resolve `defmacro))
-; (resolve (quote atom))
-#_atom
-#_
-(cljs/eval-str c-state "(pr-str `atom)" "[TEST]"
-               {:eval cljs/js-eval
-                :source-map true
-                :load (partial boot/load c-state)
-                :ns (symbol "chlorine-koans.bootstrap")}
-               (fn [ & a] (prn :RES (gensym "res-") a)))
 
 (def ^:private callbacks (atom {:error identity :result identity}))
 
@@ -62,10 +42,8 @@
 (def repl
   (reify eval/Evaluator
     (evaluate [_ command opts callback]
-      ; (prn :WILL-I-EVAL? command)
       (let [code-edn (edn-read command)
             {:keys [namespace filename row col]} opts]
-        ; (prn :OPTS opts)
         (cljs/eval-str c-state
                        (str "(pr-str "command "\n)")
                        filename
@@ -74,13 +52,12 @@
                         :load (partial boot/load c-state)
                         :ns (symbol (or namespace "chlorine-koans.bootstrap"))}
                        (fn [result]
-                         (prn :RES result)
                          (if (contains? result :value)
                            (let [v (:value result)]
-                             ((:result @callbacks) {:res (edn-read v) :code command})
+                             ((:result @callbacks) {:res (edn-read v) :code code-edn})
                              (callback {:as-text v :result v}))
                            (let [v (:error result)]
-                             ((:error @callbacks) {:res (edn-read v) :code command})
+                             ((:error @callbacks) {:res (edn-read v) :code code-edn})
                              (callback {:as-text v :error v})))))))
     (break [_ repl])))
 
