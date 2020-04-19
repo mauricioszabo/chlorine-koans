@@ -56,9 +56,10 @@
                            (let [v (:value result)]
                              ((:result @callbacks) {:res (edn-read v) :code code-edn})
                              (callback {:as-text v :result v}))
-                           (let [v (:error result)]
-                             ((:error @callbacks) {:res (edn-read v) :code code-edn})
-                             (callback {:as-text v :error v})))))))
+                           (let [v (:error result)
+                                 e (pr-str v)]
+                             ((:error @callbacks) {:res v :code code-edn})
+                             (callback {:as-text e :error e})))))))
     (break [_ repl])))
 
 (defn- notify! [{:keys [type title message]}]
