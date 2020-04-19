@@ -25,16 +25,6 @@
                [(.-row end) (cond-> (.-column end)
                                     (not= (.-column start) (.-column end)) dec)]]})))
 
-(defn open-editor [{:keys [file-name line contents column]}]
-  (p/let [position (clj->js (cond-> {:searchAllPanes true}
-                                    line (assoc :initialLine line)
-                                    column (assoc :initialColumn column)))
-          editor (.. js/atom -workspace (open file-name position))]
-    (when contents
-      (.setText ^js editor contents)
-      (.setCursorBufferPosition ^js editor #js [line (or column 0)]))
-    editor))
-
 (defn prompt [{:keys [title message arguments]}]
   (js/Promise.
    (fn [resolve]
@@ -50,6 +40,16 @@
                                                          :dismissable true
                                                          :buttons buttons}))))
        (.onDidDismiss ^js @notification #(fn [] (resolve nil) true))))))
+
+(defn open-editor [{:keys [file-name line contents column]}]
+  (p/let [position (clj->js (cond-> {:searchAllPanes true}
+                                    line (assoc :initialLine line)
+                                    column (assoc :initialColumn column)))
+          editor (.. js/atom -workspace (open file-name position))]
+    (when contents
+      (.setText ^js editor contents)
+      (.setCursorBufferPosition ^js editor #js [line (or column 0)]))
+    editor))
 
 (defn append-on-editor [{:keys [line contents column]}]
   (let [editor (current-editor)]
