@@ -26,7 +26,17 @@
        (partition 2 2)
        (mapv to-koan)))
 
+(defn gotos [{:keys [code]}]
+  (let [koan-code (u/unify '(goto-koan ?koan) code)
+        meditation-code (u/unify '(goto-exercise ?ex) code)]
+    (prn :KOAN koan-code)
+    (prn :EX meditation-code)))
+  ; (case code
+  ;   '(goto-koan 1)
+  ;   '(goto-koan 1)))
+
 (defn- enlightenmnent! []
+  (cljs/handle-result! gotos)
   (atom/append-on-editor {:contents "\n\n;; You have archived enlightenment!"}))
 
 (declare meditate-over! start!)
