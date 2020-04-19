@@ -40,7 +40,7 @@
   [x]
   (or (coll? x)
       (nil? x)
-      (string? x)))
+      (and (string? x) (-> x count (> 1)))))
 
 (declare garner-unifiers)
 
@@ -58,37 +58,6 @@
         (zip/end? z) false
         :else (recur (zip/next z))))))
 
-
-; (defn- bind-phase
-;   [binds variable expr]
-;   (if (or (nil? expr)
-;           (ignore-variable? variable))
-;     binds
-;     (assoc binds variable expr)))
-;
-; (defn- determine-occursness
-;   [want-occurs? variable? v expr binds]
-;   (if want-occurs?
-;     `(if (occurs? ~variable? ~v ~expr ~binds)
-;        (throw (IllegalStateException. (str "Cycle found in the path " ~expr)))
-;        (bind-phase ~binds ~v ~expr))
-;     `(bind-phase ~binds ~v ~expr)))
-
-; (defmacro create-var-unification-fn
-;   [want-occurs?]
-;   (let [varp  (gensym)
-;         v     (gensym)
-;         expr  (gensym)
-;         binds (gensym)]
-;     `(fn ~'var-unify
-;        [~varp ~v ~expr ~binds]
-;        (if-let [vb# (~binds ~v)]
-;          (garner-unifiers ~varp vb# ~expr ~binds)
-;          (if-let [vexpr# (and (~varp ~expr) (~binds ~expr))]
-;            (garner-unifiers ~varp ~v vexpr# ~binds)
-;            ~(determine-occursness want-occurs? varp v expr binds))))))
-;
-;
 (def ^{:doc "Unify the variable v with expr.  Uses the bindings supplied and possibly returns an extended bindings map."
        :private true}
   unify-variable (create-var-unification-fn true))
@@ -188,7 +157,6 @@
   [variable-fn]
   (partial unifier* variable-fn))
 
-
 (def unify   (make-occurs-unify-fn lvar?))
 (def subst   (make-occurs-subst-fn lvar?))
 (def unifier (make-occurs-unifier-fn lvar?))
@@ -218,7 +186,6 @@
               x
               y
               (garner-unifiers unify-variable- variable-fn x y {}))))
-
 
 (def unify-   (make-unify-fn lvar?))
 (def unifier- (make-unifier-fn lvar?))
