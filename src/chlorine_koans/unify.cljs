@@ -9,7 +9,6 @@
 (ns ^{:doc "A unification library for Clojure."
       :author "Michael Fogus"}
   chlorine-koans.unify
-  (:require-macros [chlorine-koans.unify])
   (:require [clojure.zip :as zip]
             [clojure.walk :as walk]
             [chlorine-koans.unify-macro :refer [create-var-unification-fn]]))
