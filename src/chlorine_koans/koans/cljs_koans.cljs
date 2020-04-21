@@ -6,17 +6,29 @@
             [clojure.string :as str]
             [clojure.walk :as walk]
             [promesa.core :as p]
-            [chlorine-koans.koans.cljs :as cljs]))
+            [chlorine-koans.koans.cljs :as cljs]
+            [clojure.test :refer [deftest is run-tests]]))
 
 (defonce state (atom {:current-meditation 0
                       :current-koan 0
                       :meditations []}))
 
 #_
-(swap! state merge {:current-meditation 6 :current-koan 0})
+(swap! state merge {:current-meditation 7 :current-koan 0})
 
 (defn- make-unification [code]
- (walk/prewalk-replace {:__ '?code} code))
+  (walk/prewalk #(cond
+                   (= % '(:__)) (gensym "?code")
+                   (= % :__) (gensym "?code")
+                   :else  %)
+                code))
+
+(deftest unification-test
+  (is (= '(= (foo ?code))
+         (make-unification '(= (foo :__)))))
+
+  (is (= '(= ?code)
+         (make-unification '(= (:__))))))
 
 (defn- to-koan [[message assert]]
   {:message (str ";; " message "\n;; " assert "\n\n" assert)
@@ -40,16 +52,20 @@
 (declare meditate-over! start!)
 (defn- new-koan! []
   (if (-> meditations/categories count dec (> (:current-koan @state)))
-    (swap! state update :current-koan inc)
+    (swap! state #(-> % (update :current-koan inc) (assoc :current-meditation 0)))
     (swap! state assoc :current-koan :end))
   (start!))
 
 (defn- score-meditation [{:keys [assert]} {:keys [res code]}]
+  (prn :assert assert)
+  (prn :code code)
+  (prn :U (u/unify code assert))
   (let [u (and (= res true) (u/unify code assert))
-        code (get u '?code)]
-    (when (and code (not= code :__))
-      (clippy/notify (str "You have achived enlightenment with code\n\""
-                          (get u '?code) "\""))
+        codes (when u (->> u (sort-by first) (map second) not-empty))]
+    (when (and codes (not (some #{:__} codes)))
+      (clippy/notify (str "You have achived enlightenment with code(s)\n"
+                          (->> codes (map #(str "\"" % "\"")) (str/join ","))))
+
       (p/do!
        (p/delay 300)
        (if (-> @state :meditations count dec (> (:current-meditation @state)))
