@@ -1,6 +1,6 @@
 (ns chlorine-koans.koans.cljs
   (:require [cljs.js :as cljs]
-            [clojure.reader :as edn]
+            [clojure.tools.reader :as r]
             [clojure.set :as set]
             [promesa.core :as p]
             [repl-tooling.eval :as eval]
@@ -32,25 +32,26 @@
                      :load-on-init '#{chlorine-koans.bootstrap}}
                     identity)))
 
-(def ^:private callbacks (atom {:error identity :result identity}))
+(def ^:private callbacks (atom {:error identity :result identity
+                                :before-code nil}))
 
 (defn- edn-read [string]
   (try
-    (edn/read-string {:default tagged-literal} string)
+    (r/read-string string)
     (catch :default _ (symbol (str string)))))
 
 (def repl
   (reify eval/Evaluator
     (evaluate [_ command opts callback]
       (let [code-edn (edn-read command)
-            {:keys [namespace filename row col]} opts]
-        (cljs/eval-str c-state
-                       (str "(pr-str "command "\n)")
-                       filename
-                       {:eval cljs/js-eval
-                        :source-map true
-                        :load (partial boot/load c-state)
-                        :ns (symbol (or namespace "chlorine-koans.bootstrap"))}
+            {:keys [namespace filename row col]} opts
+            eval-options {:eval cljs/js-eval
+                          :source-map true
+                          :load (partial boot/load c-state)
+                          :ns (symbol (or namespace "chlorine-koans.bootstrap"))}]
+        (when-let [bc (:before-code @callbacks)]
+          (cljs/eval-str c-state (str "(pr-str " bc "\n)") filename eval-options identity))
+        (cljs/eval-str c-state (str "(pr-str "command "\n)") filename eval-options
                        (fn [result]
                          (if (contains? result :value)
                            (let [v (:value result)]
@@ -102,3 +103,4 @@
 
 (defn handle-result! [callback] (swap! callbacks assoc :result callback))
 (defn handle-error! [callback] (swap! callbacks assoc :error callback))
+(defn before-code! [code] (swap! callbacks assoc :before-code code))
